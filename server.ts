@@ -755,68 +755,78 @@ function buildFallbackChecklist(sopData: any) {
   };
 }
 
-async function startServer() {
-  const app = express();
-  app.use(express.json({ limit: "15mb" }));
+export const app = express();
+app.use(express.json({ limit: "15mb" }));
 
-  // Health check
-  app.get("/api/health", (_req, res) => {
-    res.json({ status: "ok", app: "SOP SMART SCHOOL" });
-  });
+// Route rewrites compatibility for Vercel and reverse proxies
+app.use((req, _res, next) => {
+  if (
+    !req.url.startsWith("/api") &&
+    (req.url.startsWith("/gemini/") || req.url.startsWith("/health") || req.url.startsWith("/default-data"))
+  ) {
+    req.url = "/api" + req.url;
+  }
+  next();
+});
 
-  // API 0: Persistent Default Data (School Profile & SOPs)
-  app.get("/api/default-data", (_req, res) => {
-    try {
-      const filePath = path.join(__dirname, "data", "defaultData.json");
-      if (fs.existsSync(filePath)) {
-        const fileContent = fs.readFileSync(filePath, "utf-8");
-        const parsed = JSON.parse(fileContent);
-        return res.json({ success: true, data: parsed });
-      }
-      return res.json({ success: false, message: "Belum ada data default tersimpan di server." });
-    } catch (err: any) {
-      return res.status(500).json({ success: false, error: err.message });
+// Health check
+app.get("/api/health", (_req, res) => {
+  res.json({ status: "ok", app: "SOP SMART SCHOOL" });
+});
+
+// API 0: Persistent Default Data (School Profile & SOPs)
+app.get("/api/default-data", (_req, res) => {
+  try {
+    const filePath = path.join(serverDir, "data", "defaultData.json");
+    if (fs.existsSync(filePath)) {
+      const fileContent = fs.readFileSync(filePath, "utf-8");
+      const parsed = JSON.parse(fileContent);
+      return res.json({ success: true, data: parsed });
     }
-  });
+    return res.json({ success: false, message: "Belum ada data default tersimpan di server." });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
 
-  app.post("/api/default-data", (req, res) => {
-    try {
-      const { schoolProfile, sops } = req.body;
-      if (!schoolProfile && !sops) {
-        return res.status(400).json({ success: false, message: "Data tidak boleh kosong." });
-      }
-      const dirPath = path.join(__dirname, "data");
-      if (!fs.existsSync(dirPath)) {
-        fs.mkdirSync(dirPath, { recursive: true });
-      }
-      const filePath = path.join(dirPath, "defaultData.json");
-      const payload = {
-        savedAt: new Date().toISOString(),
-        schoolProfile,
-        sops,
-      };
-      fs.writeFileSync(filePath, JSON.stringify(payload, null, 2), "utf-8");
-      return res.json({
-        success: true,
-        message: "Data default berhasil disimpan secara permanen di server.",
-        data: payload,
-      });
-    } catch (err: any) {
-      return res.status(500).json({ success: false, error: err.message });
+app.post("/api/default-data", (req, res) => {
+  try {
+    const { schoolProfile, sops } = req.body;
+    if (!schoolProfile && !sops) {
+      return res.status(400).json({ success: false, message: "Data tidak boleh kosong." });
     }
-  });
+    const dirPath = path.join(serverDir, "data");
+    if (!fs.existsSync(dirPath)) {
+      fs.mkdirSync(dirPath, { recursive: true });
+    }
+    const filePath = path.join(dirPath, "defaultData.json");
+    const payload = {
+      savedAt: new Date().toISOString(),
+      schoolProfile,
+      sops,
+    };
+    fs.writeFileSync(filePath, JSON.stringify(payload, null, 2), "utf-8");
+    return res.json({
+      success: true,
+      message: "Data default berhasil disimpan secara permanen di server.",
+      data: payload,
+    });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
 
-  app.delete("/api/default-data", (_req, res) => {
-    try {
-      const filePath = path.join(__dirname, "data", "defaultData.json");
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
-      }
-      return res.json({ success: true, message: "Data default server berhasil direset." });
-    } catch (err: any) {
-      return res.status(500).json({ success: false, error: err.message });
+app.delete("/api/default-data", (_req, res) => {
+  try {
+    const filePath = path.join(serverDir, "data", "defaultData.json");
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
     }
-  });
+    return res.json({ success: true, message: "Data default server berhasil direset." });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
 
   // API 1: AI Analisis Kebutuhan SOP Sekolah
   app.post("/api/gemini/analyze-needs", async (req, res) => {
@@ -1148,6 +1158,7 @@ Format balasan JSON:
   });
 
   // Vite middleware for development vs static for production
+async function startServer() {
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
       server: { middlewareMode: true },
@@ -1169,9 +1180,15 @@ Format balasan JSON:
     });
   }
 
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-  });
+  if (!process.env.VERCEL) {
+    app.listen(PORT, "0.0.0.0", () => {
+      console.log(`Server running on http://localhost:${PORT}`);
+    });
+  }
 }
 
-startServer();
+if (!process.env.VERCEL) {
+  startServer();
+}
+
+export default app;

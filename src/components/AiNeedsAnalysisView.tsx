@@ -66,33 +66,46 @@ export const AiNeedsAnalysisView: React.FC<AiNeedsAnalysisViewProps> = ({
         }),
       });
 
-      if (!res.ok) {
-        throw new Error("Gagal melakukan analisis kebutuhan SOP");
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data.recommendations) && data.recommendations.length > 0) {
+          setRecommendations(data.recommendations);
+          return;
+        }
       }
-
-      const data = await res.json();
-      if (Array.isArray(data.recommendations) && data.recommendations.length > 0) {
-        setRecommendations(data.recommendations);
-      } else {
-        // Fallback to rich curated recommendations from master catalog
-        const fallbackList: SopRecommendationItem[] = RECOMMENDATION_CATEGORIES.flatMap((c) =>
-          (c.suggestedSops || []).map((s) => ({
-            id: `rec-${Math.random()}`,
-            categoryCode: c.code,
-            categoryName: c.categoryName || c.name,
-            title: s.title,
-            priority: s.priority,
-            objective: s.objective,
-            reason: `Dibutuhkan berdasarkan kondisi ${schoolProfile.namaSekolah} (${formData.jumlahSiswa} siswa, ${formData.jumlahRombel} rombel).`,
-            riskIfNotAvailable: "Ketidakpastian alur kerja dan risiko temuan audit atau masalah operasional.",
-            partiesInvolved: ["Kepala Sekolah", "Guru", "Tendik"],
-            primaryLegalBasis: "Permendikdasmen RI",
-          }))
-        );
-        setRecommendations(fallbackList);
-      }
-    } catch (err: any) {
-      alert(`Terjadi masalah: ${err.message}`);
+      // Fallback to rich curated recommendations from master catalog
+      const fallbackList: SopRecommendationItem[] = RECOMMENDATION_CATEGORIES.flatMap((c) =>
+        (c.suggestedSops || []).map((s) => ({
+          id: `rec-${Math.random()}`,
+          categoryCode: c.code,
+          categoryName: c.categoryName || c.name,
+          title: s.title,
+          priority: s.priority,
+          objective: s.objective,
+          reason: `Dibutuhkan berdasarkan kondisi ${schoolProfile.namaSekolah} (${formData.jumlahSiswa} siswa, ${formData.jumlahRombel} rombel).`,
+          riskIfNotAvailable: "Ketidakpastian alur kerja dan risiko temuan audit atau masalah operasional.",
+          partiesInvolved: ["Kepala Sekolah", "Guru", "Tendik"],
+          primaryLegalBasis: "Permendikdasmen RI",
+        }))
+      );
+      setRecommendations(fallbackList);
+    } catch {
+      // Graceful fallback without blocking alert
+      const fallbackList: SopRecommendationItem[] = RECOMMENDATION_CATEGORIES.flatMap((c) =>
+        (c.suggestedSops || []).map((s) => ({
+          id: `rec-${Math.random()}`,
+          categoryCode: c.code,
+          categoryName: c.categoryName || c.name,
+          title: s.title,
+          priority: s.priority,
+          objective: s.objective,
+          reason: `Dibutuhkan berdasarkan kondisi ${schoolProfile.namaSekolah} (${formData.jumlahSiswa} siswa, ${formData.jumlahRombel} rombel).`,
+          riskIfNotAvailable: "Ketidakpastian alur kerja dan risiko temuan audit atau masalah operasional.",
+          partiesInvolved: ["Kepala Sekolah", "Guru", "Tendik"],
+          primaryLegalBasis: "Permendikdasmen RI",
+        }))
+      );
+      setRecommendations(fallbackList);
     } finally {
       setIsLoading(false);
     }

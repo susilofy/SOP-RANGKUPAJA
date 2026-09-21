@@ -35,9 +35,31 @@ export const ChecklistGeneratorModal: React.FC<ChecklistGeneratorModalProps> = (
       if (res.ok) {
         const data = await res.json();
         setChecklistData(data);
+        return;
       }
-    } catch (e) {
-      alert("Gagal menyusun lembar checklist dengan AI.");
+      // Fallback using direct SOP steps
+      const fallbackChecklist = {
+        judulChecklist: `Lembar Kendali Mutu & Monitoring: ${sop.identitas?.namaSop || "SOP Sekolah"}`,
+        sasaranUnit: schoolProfile.namaSekolah || "Satuan Pendidikan SD",
+        items: (sop.tabelPelaksanaMutuBaku || []).map((step, idx) => ({
+          no: step.no || idx + 1,
+          uraianLangkah: step.uraianProsedur || `Langkah operasional ke-${idx + 1} (Output: ${step.output || "-"})`,
+          pelaksana: Object.keys(step.pelaksanaChecks || {})[0] || "Tim Pelaksana",
+        })),
+      };
+      setChecklistData(fallbackChecklist);
+    } catch {
+      // Fallback on error
+      const fallbackChecklist = {
+        judulChecklist: `Lembar Kendali Mutu & Monitoring: ${sop.identitas?.namaSop || "SOP Sekolah"}`,
+        sasaranUnit: schoolProfile.namaSekolah || "Satuan Pendidikan SD",
+        items: (sop.tabelPelaksanaMutuBaku || []).map((step, idx) => ({
+          no: step.no || idx + 1,
+          uraianLangkah: step.uraianProsedur || `Langkah operasional ke-${idx + 1} (Output: ${step.output || "-"})`,
+          pelaksana: Object.keys(step.pelaksanaChecks || {})[0] || "Tim Pelaksana",
+        })),
+      };
+      setChecklistData(fallbackChecklist);
     } finally {
       setIsLoading(false);
     }

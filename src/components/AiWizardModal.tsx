@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { SchoolProfile, SopDocument } from "../types";
 import { RECOMMENDATION_CATEGORIES } from "../data/initialData";
+import { buildFallbackSopDocument } from "../data/sopGeneratorFallback";
 
 // Helper: Auto-detect standard SD category from title keywords
 const detectCategoryFromTitle = (title: string): string | null => {
@@ -279,17 +280,33 @@ export const AiWizardModal: React.FC<AiWizardModalProps> = ({
       clearInterval(progressTimer);
       setGenerationProgress(100);
 
-      if (!res.ok) {
-        throw new Error("Gagal menyusun SOP dengan AI.");
+      if (res.ok) {
+        const sopData: SopDocument = await res.json();
+        setGeneratedSop(sopData);
+        setStep(4);
+        return;
       }
-
-      const sopData: SopDocument = await res.json();
-      setGeneratedSop(sopData);
+      // If server responded with error (e.g. 404 on Vercel without serverless), fall back to standard template
+      const fallbackSop = buildFallbackSopDocument(
+        sopTitle,
+        selectedCategory,
+        schoolProfile,
+        answers
+      );
+      setGeneratedSop(fallbackSop);
       setStep(4);
-    } catch (error: any) {
+    } catch {
       clearInterval(progressTimer);
-      alert(error.message || "Terjadi kesalahan saat AI menyusun draf SOP.");
-      setStep(2);
+      setGenerationProgress(100);
+      // Offline / network fallback: produce structured standard SD SOP
+      const fallbackSop = buildFallbackSopDocument(
+        sopTitle,
+        selectedCategory,
+        schoolProfile,
+        answers
+      );
+      setGeneratedSop(fallbackSop);
+      setStep(4);
     } finally {
       setIsGenerating(false);
     }

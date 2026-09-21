@@ -38,9 +38,31 @@ export const FormGeneratorModal: React.FC<FormGeneratorModalProps> = ({
       if (res.ok) {
         const data = await res.json();
         setGeneratedForm(data);
+        return;
       }
-    } catch (e) {
-      alert("Gagal membuat formulir dengan AI.");
+      // Fallback standardized form
+      setGeneratedForm({
+        namaFormulir: selectedFormName,
+        fields: [
+          { label: "Hari / Tanggal Pelaksanaan", type: "text", wajib: true, placeholder: "Contoh: Senin, 10 Januari" },
+          { label: "Nama Petugas / Guru Pelaksana", type: "text", wajib: true, placeholder: "Nama lengkap dan gelar" },
+          { label: "Uraian Hasil Kegiatan / Tindakan", type: "textarea", wajib: true, placeholder: "Deskripsi rinci hasil kegiatan" },
+          { label: "Catatan Tindak Lanjut", type: "textarea", wajib: false, placeholder: "Rekomendasi atau catatan khusus" },
+          { label: "Status Verifikasi", type: "text", wajib: true, placeholder: "Sesuai Prosedur / Perlu Perbaikan" },
+        ],
+      });
+    } catch {
+      // Fallback on error
+      setGeneratedForm({
+        namaFormulir: selectedFormName,
+        fields: [
+          { label: "Hari / Tanggal Pelaksanaan", type: "text", wajib: true, placeholder: "Contoh: Senin, 10 Januari" },
+          { label: "Nama Petugas / Guru Pelaksana", type: "text", wajib: true, placeholder: "Nama lengkap dan gelar" },
+          { label: "Uraian Hasil Kegiatan / Tindakan", type: "textarea", wajib: true, placeholder: "Deskripsi rinci hasil kegiatan" },
+          { label: "Catatan Tindak Lanjut", type: "textarea", wajib: false, placeholder: "Rekomendasi atau catatan khusus" },
+          { label: "Status Verifikasi", type: "text", wajib: true, placeholder: "Sesuai Prosedur / Perlu Perbaikan" },
+        ],
+      });
     } finally {
       setIsLoading(false);
     }
