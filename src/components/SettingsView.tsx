@@ -221,7 +221,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       </div>
 
       {/* Profil Sekolah Link */}
-      <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-2xs flex items-center justify-between">
+      <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wide">
             Profil Satuan Pendidikan SD
@@ -231,12 +231,27 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <strong>{schoolProfile.namaKepalaSekolah}</strong> (NIP: {schoolProfile.nip})
           </p>
         </div>
-        <button
-          onClick={onOpenProfile}
-          className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold px-4 py-2 rounded-lg cursor-pointer"
-        >
-          Edit Profil Lengkap
-        </button>
+        <div className="flex items-center space-x-2">
+          <button
+            type="button"
+            onClick={() => {
+              if (window.confirm("Muat profil identitas sekolah default contoh (SD Negeri 3 Loloan Timur)?")) {
+                onRestoreData(sops, DEFAULT_SCHOOL_PROFILE);
+              }
+            }}
+            className="border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-semibold px-3 py-2 rounded-lg cursor-pointer flex items-center space-x-1"
+            title="Muat profil default contoh bawaan (SD Negeri 3 Loloan Timur)"
+          >
+            <RotateCcw size={13} />
+            <span>Reset Profil Contoh</span>
+          </button>
+          <button
+            onClick={onOpenProfile}
+            className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold px-4 py-2 rounded-lg cursor-pointer"
+          >
+            Edit Profil Lengkap
+          </button>
+        </div>
       </div>
 
       {/* Backup and Restore */}

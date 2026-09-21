@@ -1,6 +1,7 @@
-import React, { useState } from "react";
-import { X, Save, Building2, User, FileText, Check, Upload } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { X, Save, Building2, User, FileText, Check, Upload, RotateCcw } from "lucide-react";
 import { SchoolProfile } from "../types";
+import { DEFAULT_SCHOOL_PROFILE } from "../data/initialData";
 
 interface SchoolProfileModalProps {
   isOpen: boolean;
@@ -19,10 +20,23 @@ export const SchoolProfileModal: React.FC<SchoolProfileModalProps> = ({
   const [setAsDefault, setSetAsDefault] = useState(true);
   const [savedSuccess, setSavedSuccess] = useState(false);
 
+  // Keep form data synchronized whenever profile or isOpen changes
+  useEffect(() => {
+    if (isOpen) {
+      setFormData({ ...profile });
+    }
+  }, [isOpen, profile]);
+
   if (!isOpen) return null;
 
   const handleChange = (field: keyof SchoolProfile, val: any) => {
     setFormData((prev) => ({ ...prev, [field]: val }));
+  };
+
+  const handleResetToExampleDefault = () => {
+    if (window.confirm("Muat data profil identitas sekolah default contoh (SD Negeri 3 Loloan Timur)?")) {
+      setFormData({ ...DEFAULT_SCHOOL_PROFILE });
+    }
   };
 
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>, field: "logoSekolahUrl" | "logoPemdaUrl") => {
@@ -70,9 +84,20 @@ export const SchoolProfileModal: React.FC<SchoolProfileModalProps> = ({
         <form onSubmit={handleSubmit} className="p-6 space-y-6 max-h-[75vh] overflow-y-auto">
           {/* Section 1: Identitas Sekolah */}
           <div className="space-y-3">
-            <div className="flex items-center space-x-2 text-xs font-bold text-slate-800 uppercase tracking-wider border-b pb-1.5">
-              <Building2 size={15} className="text-indigo-600" />
-              <span>1. Identitas Satuan Pendidikan</span>
+            <div className="flex items-center justify-between text-xs font-bold text-slate-800 uppercase tracking-wider border-b pb-1.5">
+              <div className="flex items-center space-x-2">
+                <Building2 size={15} className="text-indigo-600" />
+                <span>1. Identitas Satuan Pendidikan</span>
+              </div>
+              <button
+                type="button"
+                onClick={handleResetToExampleDefault}
+                className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-800 hover:underline flex items-center space-x-1 cursor-pointer normal-case tracking-normal"
+                title="Muat profil SD Negeri 3 Loloan Timur sebagai acuan default contoh"
+              >
+                <RotateCcw size={12} />
+                <span>Muat Data Default Contoh</span>
+              </button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
               <div className="md:col-span-2">
